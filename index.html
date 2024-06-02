@@ -1,135 +1,117 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Emergency Centers Map</title>
+    <title>Emergency Centers in Ramallah</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
     <style>
-        #map {
-            height: 100vh;
-        }
+        #map { height: 600px; }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
-    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+    <script src="https://unpkg.com/leaflet-ajax@2.1.0/dist/leaflet.ajax.min.js"></script>
+    <script src="https://unpkg.com/leaflet-legend/L.Control.Legend.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-legend/L.Control.Legend.css" />
     <script>
-        // إعداد الخريطة
-        var map = L.map('map').setView([31.9038, 35.2034], 13);
+        var map = L.map('map').setView([31.9024, 35.1957], 13); // مركز رام الله
 
-        // إضافة طبقة البلاط
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            maxZoom: 18,
         }).addTo(map);
 
-        // رمز SVG لأيقونة المستشفيات
-        var hospitalIcon = L.divIcon({
-            html: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-hospital" viewBox="0 0 16 16">
-                    <path d="M8.5 5.034v1.1l.953-.55.5.867L9 7l.953.55-.5.866-.953-.55v1.1h-1v-1.1l-.953.55-.5-.866L7 7l-.953-.55.5-.866.953.55v-1.1zM13.25 9a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25zM13 11.25a.25.25 0 0 1 .25-.25h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5a.25.25 0 0 1-.25-.25zm.25 1.75a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25zm-11-4a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 3 9.75v-.5A.25.25 0 0 0 2.75 9zm0 2a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25zM2 13.25a.25.25 0 0 1 .25-.25h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5a.25.25 0 0 1-.25-.25z"/>
-                    <path d="M5 1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1a1 1 0 0 1 1 1v4h3a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h3V3a1 1 0 0 1 1-1zm2 14h2v-3H7zm3 0h1V3H5v12h1v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1zm0-14H6v1h4zm2 7v7h3V8zm-8 7V8H1v7z"/>
-                   </svg>`,
-            className: '',
-            iconSize: [20, 20]
+        // تحميل وعرض ملفات GeoJSON
+        var hospitalLayer = new L.GeoJSON.AJAX("hospital.geojson", {
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup("مستشفى: " + feature.properties.NAME_AR);
+            }
         });
 
-        // إضافة ملفات GeoJSON
-        var hospitalLayer = L.geoJSON(null, {
-            pointToLayer: function (feature, latlng) {
-                return L.marker(latlng, { icon: hospitalIcon });
-            },
+        var pharmacyLayer = new L.GeoJSON.AJAX("pharmacy.geojson", {
             onEachFeature: function (feature, layer) {
-                layer.bindPopup('<strong>' + feature.properties.NAME_AR + '</strong><br>Type: Hospital<br>Phone: ' + feature.properties.Phone_Num);
+                layer.bindPopup("صيدلية: " + feature.properties.NAME_AR);
             }
-        }).addTo(map);
-        var ramallahZonesLayer = L.geoJSON(null, {
+        });
+
+        var civilLayer = new L.GeoJSON.AJAX("ciivilld.geojson", {
             onEachFeature: function (feature, layer) {
-                layer.bindPopup('<strong>' + feature.properties.NAME + '</strong><br>Mail Code: ' + feature.properties.MAIL_CODE);
+                layer.bindPopup("دفاع مدني: " + feature.properties.Name);
             }
-        }).addTo(map);
-        var civilDefenseLayer = L.geoJSON(null, {
+        });
+
+        var policeLayer = new L.GeoJSON.AJAX("Police.geojson", {
             onEachFeature: function (feature, layer) {
-                layer.bindPopup('<strong>' + feature.properties.Name + '</strong><br>Phone: ' + feature.properties.number_pho);
+                layer.bindPopup("شرطة: " + feature.properties.NAME_AR_1);
             }
-        }).addTo(map);
-        var policeLayer = L.geoJSON(null, {
+        });
+
+        var ramallahZonesLayer = new L.GeoJSON.AJAX("RamallahZones.geojson", {
             onEachFeature: function (feature, layer) {
-                layer.bindPopup('<strong>' + feature.properties.NAME_AR_1 + '</strong><br>Phone: ' + feature.properties.number_pho);
+                var zoneName = feature.properties.NAME;
+                layer.bindPopup("المنطقة: " + zoneName);
             }
-        }).addTo(map);
+        });
 
-        var pharmacyLayer = L.geoJSON(null, {
-            pointToLayer: function (feature, latlng) {
-                return L.marker(latlng, { icon: pharmacyIcon });
-        },
-        onEachFeature: function (feature, layer) {
-            layer.bindPopup('<strong>' + feature.properties.NAME_AR + '</strong><br>Type: Pharmacy<br>Phone: ' + feature.properties.Phone_Num);
-        }
-    }).addTo(map);
+        hospitalLayer.addTo(map);
+        pharmacyLayer.addTo(map);
+        civilLayer.addTo(map);
+        policeLayer.addTo(map);
+        ramallahZonesLayer.addTo(map);
 
-    // تحميل ملف GeoJSON للصيدليات
-    fetch('pharmacy.geojson').then(res => res.json()).then(data => {
-        pharmacyLayer.addData(data);
-        // تحديد لون الصيدليات إلى الأخضر
-        pharmacyLayer.setStyle({ color: 'green' });
-    }); 
+        // وظيفة للتحقق من إذا كانت المنطقة تحتوي على مراكز طوارئ
+        function zoneNeedsReinforcement(zone) {
+            var emergencyCenterCount = 0;
+            var emergencyCenters = [hospitalLayer, pharmacyLayer, civilLayer, policeLayer];
 
-        // تحميل ملفات GeoJSON
-        fetch('hospital.geojson').then(res => res.json()).then(data => hospitalLayer.addData(data));
-        fetch('RamallahZones.geojson').then(res => res.json()).then(data => ramallahZonesLayer.addData(data));
-        fetch('ciivilld.geojson').then(res => res.json()).then(data => civilDefenseLayer.addData(data));
-        fetch('Police.geojson').then(res => res.json()).then(data => policeLayer.addData(data));
+            for (var i = 0; i < emergencyCenters.length; i++) {
+                emergencyCenters[i].eachLayer(function (featureLayer) {
+                    if (zone.getBounds().contains(featureLayer.getLatLng())) {
+                        emergencyCenterCount++;
+                    }
+                });
+            }
 
-        // إعداد البحث
-        var geocoder = L.Control.geocoder({
-            defaultMarkGeocode: false
-        })
-        .on('markgeocode', function(e) {
-            var bbox = e.geocode.bbox;
-            var poly = L.polygon([
-                bbox.getSouthEast(),
-                bbox.getNorthEast(),
-                bbox.getNorthWest(),
-                bbox.getSouthWest()
-            ]).addTo(map);
-            map.fitBounds(poly.getBounds());
-        })
-        .addTo(map);
-
-        // إعداد الموقع الجغرافي
-        map.locate({setView: true, maxZoom: 16});
-
-        function onLocationFound(e) {
-            var radius = e.accuracy / 2;
-            L.marker(e.latlng).addTo(map)
-                .bindPopup("You are within " + radius + " meters from this point").openPopup();
-            L.circle(e.latlng, radius).addTo(map);
+            return emergencyCenterCount <= 2;
         }
 
-        map.on('locationfound', onLocationFound);
-
-        function onLocationError(e) {
-            alert(e.message);
+        // وظيفة لاختيار موقع جديد لمركز الطوارئ
+        function findSuitableLocation(zone) {
+            var center = zone.getBounds().getCenter();
+            var suitableLocationMarker = L.marker(center, {
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+                    shadowSize: [41, 41]
+                })
+            }).addTo(map);
+            suitableLocationMarker.bindPopup("موقع مقترح لمركز طوارئ جديد").openPopup();
         }
 
-        map.on('locationerror', onLocationError);
+        // تلوين المناطق التي تحتاج إلى تعزيز وتحديد مواقع جديدة
+        ramallahZonesLayer.on('data:loaded', function() {
+            ramallahZonesLayer.eachLayer(function(layer) {
+                if (zoneNeedsReinforcement(layer)) {
+                    layer.setStyle({color: 'red'});
+                    findSuitableLocation(layer);
+                } else {
+                    layer.setStyle({color: 'green'});
+                }
+            });
+        });
 
-        // إعداد الكلستر والتحليل الحراري
-        var markers = L.markerClusterGroup();
-        markers.addLayer(hospitalLayer);
-        markers.addLayer(civilDefenseLayer);
-        markers.addLayer(policeLayer);
-        map.addLayer(markers);
+        var legend = L.control.legend({
+            position: 'bottomright',
+            collapsed: false
+        });
 
-        var heat = L.heatLayer([
-            // إضافة النقاط الحرارية هنا (مثال)
-            [31.9038, 35.2034, 0.5]
-        ], {radius: 25}).addTo(map);
+        legend.addTo(map);
+        legend.setContent('<h4>تعزيز المراكز</h4><i style="background: red"></i> بحاجة إلى تعزيز<br><i style="background: green"></i> لا تحتاج إلى تعزيز');
+
     </script>
 </body>
+</html>

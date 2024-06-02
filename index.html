@@ -1,118 +1,87 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Emergency Centers in Ramallah</title>
-    <meta charset="utf-8" />
+    <title>Map with Routing</title>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
     <style>
-        #map { height: 600px; }
+        #map {
+            height: 100vh;
+        }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-ajax@2.1.0/dist/leaflet.ajax.min.js"></script>
-    <script src="https://unpkg.com/leaflet-legend/L.Control.Legend.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-legend/L.Control.Legend.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script>
-        var map = L.map('map').setView([31.9024, 35.1957], 13); // مركز رام الله
+        const map = L.map('map').setView([31.9027, 35.1955], 13);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // تحميل وعرض ملفات GeoJSON
-        var hospitalLayer = new L.GeoJSON.AJAX("hospital.geojson", {
-            onEachFeature: function (feature, layer) {
-                layer.bindPopup("مستشفى: " + feature.properties.NAME_AR);
-            }
-        });
+        const hospitalIcon = L.divIcon({ className: 'fa-regular fa-hospital' });
+        const policeIcon = L.divIcon({ className: 'fa-solid fa-user-police' });
+        const civilDefenseIcon = L.divIcon({ className: 'fa-duotone fa-truck-fire' });
+        const pharmacyIcon = L.divIcon({ className: 'fa-solid fa-mortar-pestle' });
 
-        var pharmacyLayer = new L.GeoJSON.AJAX("pharmacy.geojson", {
-            onEachFeature: function (feature, layer) {
-                layer.bindPopup("صيدلية: " + feature.properties.NAME_AR);
-            }
-        });
-
-        var civilLayer = new L.GeoJSON.AJAX("ciivilld.geojson", {
-            onEachFeature: function (feature, layer) {
-                layer.bindPopup("دفاع مدني: " + feature.properties.Name);
-            }
-        });
-
-        var policeLayer = new L.GeoJSON.AJAX("Police.geojson", {
-            onEachFeature: function (feature, layer) {
-                layer.bindPopup("شرطة: " + feature.properties.NAME_AR_1);
-            }
-        });
-
-        var ramallahZonesLayer = new L.GeoJSON.AJAX("RamallahZones.geojson", {
-            onEachFeature: function (feature, layer) {
-                var zoneName = feature.properties.NAME;
-                layer.bindPopup("المنطقة: " + zoneName);
-            }
-        });
-
-        hospitalLayer.addTo(map);
-        pharmacyLayer.addTo(map);
-        civilLayer.addTo(map);
-        policeLayer.addTo(map);
-        ramallahZonesLayer.addTo(map);
-
-        // وظيفة للتحقق من إذا كانت المنطقة تحتوي على مراكز طوارئ
-        function zoneNeedsReinforcement(zone) {
-            var emergencyCenterCount = 0;
-            var emergencyCenters = [hospitalLayer, pharmacyLayer, civilLayer, policeLayer];
-
-            for (var i = 0; i < emergencyCenters.length; i++) {
-                emergencyCenters[i].eachLayer(function (featureLayer) {
-                    if (zone.getBounds().contains(featureLayer.getLatLng())) {
-                        emergencyCenterCount++;
+        function addGeoJSONLayer(url, icon, layerGroup) {
+            axios.get(url).then(response => {
+                L.geoJSON(response.data, {
+                    pointToLayer: function (feature, latlng) {
+                        return L.marker(latlng, { icon: icon });
                     }
-                });
-            }
-
-            return emergencyCenterCount <= 2;
+                }).addTo(layerGroup);
+            });
         }
 
-        // وظيفة لاختيار موقع جديد لمركز الطوارئ
-        function findSuitableLocation(zone) {
-            var center = zone.getBounds().getCenter();
-            var suitableLocationMarker = L.marker(center, {
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-                    shadowSize: [41, 41]
-                })
-            }).addTo(map);
-            suitableLocationMarker.bindPopup("موقع مقترح لمركز طوارئ جديد").openPopup();
-        }
+        const hospitalLayer = L.layerGroup().addTo(map);
+        const policeLayer = L.layerGroup().addTo(map);
+        const civilDefenseLayer = L.layerGroup().addTo(map);
+        const pharmacyLayer = L.layerGroup().addTo(map);
 
-        // تلوين المناطق التي تحتاج إلى تعزيز وتحديد مواقع جديدة
-        ramallahZonesLayer.on('data:loaded', function() {
-            ramallahZonesLayer.eachLayer(function(layer) {
-                if (zoneNeedsReinforcement(layer)) {
-                    layer.setStyle({color: 'red'});
-                    findSuitableLocation(layer);
-                } else {
-                    layer.setStyle({color: 'green'});
+        addGeoJSONLayer('https://your-github-username.github.io/your-repo-name/hospital.geojson', hospitalIcon, hospitalLayer);
+        addGeoJSONLayer('https://your-github-username.github.io/your-repo-name/police.geojson', policeIcon, policeLayer);
+        addGeoJSONLayer('https://your-github-username.github.io/your-repo-name/civil.geojson', civilDefenseIcon, civilDefenseLayer);
+        addGeoJSONLayer('https://your-github-username.github.io/your-repo-name/pharmacy.geojson', pharmacyIcon, pharmacyLayer);
+
+        const startPoint = L.latLng(31.9027, 35.1955);
+
+        function findNearestMarker(latlng, layerGroup) {
+            let nearestMarker = null;
+            let nearestDistance = Infinity;
+
+            layerGroup.eachLayer(layer => {
+                const distance = latlng.distanceTo(layer.getLatLng());
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestMarker = layer;
                 }
             });
-        });
 
-        var legend = L.control.legend({
-            position: 'bottomright',
-            collapsed: false
-        });
+            return nearestMarker;
+        }
 
-        legend.addTo(map);
-        legend.setContent('<h4>تعزيز المراكز</h4><i style="background: red"></i> بحاجة إلى تعزيز<br><i style="background: green"></i> لا تحتاج إلى تعزيز');
+        function calculateRouteToNearest(latlng, layerGroup) {
+            const nearestMarker = findNearestMarker(latlng, layerGroup);
 
+            if (nearestMarker) {
+                L.Routing.control({
+                    waypoints: [
+                        latlng,
+                        nearestMarker.getLatLng()
+                    ],
+                    routeWhileDragging: true
+                }).addTo(map);
+            }
+        }
 
+        // استخدام نقطة البداية وتحديد المسار إلى أقرب مستشفى
+        calculateRouteToNearest(startPoint, hospitalLayer);
     </script>
 </body>
 </html>

@@ -1,409 +1,119 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
+    <title>Emergency Centers Map</title>
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapping Emergency Centers in Ramallah city</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- Leaflet plugins CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-search/dist/leaflet-search.min.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-measure/dist/leaflet-measure.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-sidebar/src/L.Control.Sidebar.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-    <!-- Custom CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
     <style>
-        /* Map container styling */
-        #map { 
-            height: 100vh; /* Full viewport height */
-        }
-
-        /* Legend styling */
-        .legend { 
-            background: white; 
-            line-height: 1.5em;
-            padding: 6px 8px;
-            font: 14px/16px Arial, Helvetica, sans-serif;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            border-radius: 5px;
-        }
-
-        /* Search control styling */
-        .leaflet-control-search {
-            border-radius: 5px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-        }
-
-        /* Scale control styling */
-        .leaflet-control-scale {
-            position: absolute;
-            bottom: 50px;
-            left: 50px;
-            padding: 5px 10px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border: 2px solid #777;
-            border-radius: 5px;
-        }
-
-        /* North arrow styling */
-        .leaflet-control-northarrow {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 30px;
-            height: 30px;
-            background-image: url('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/north_arrow.svg');
-            background-size: cover;
-            cursor: pointer;
-            z-index: 1000; /* Ensure the arrow is above other controls */
-        }
-
-        /* Sidebar styling */
-        .sidebar {
-            background: white;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            padding: 10px;
-            width: 300px;
-            height: 100%;
-            overflow-y: auto;
-            display: none; /* Initially hide sidebar */
-        }
-
-        .sidebar.active {
-            display: block; /* Show sidebar when active */
-        }
-
-        .sidebar-header {
-            border-bottom: 1px solid #ccc;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-        }
-
-        .sidebar-content {
-            margin-bottom: 10px;
-        }
-
-        /* Sidebar toggle button styling */
-        .sidebar-toggle {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: #fff;
-            padding: 5px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            cursor: pointer;
-            z-index: 1000;
-        }
-
-        /* Locate user control styling */
-        .leaflet-control-locate {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: #fff;
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            cursor: pointer;
-            z-index: 1000;
+        #map {
+            height: 100vh;
         }
     </style>
 </head>
 <body>
-    <!-- Map container -->
     <div id="map"></div>
-    
-    <!-- North arrow control -->
-    <div class="leaflet-control-northarrow" title="North"></div>
-    
-    <!-- Sidebar -->
-    <div id="sidebar" class="sidebar">
-        <div class="sidebar-header">
-            <h3>Categories</h3>
-            <p>Mapping Emergency Centers in Ramallah city</p>
-        </div>
-        <div class="sidebar-content">
-            <input type="checkbox" id="toggleHospitals" checked>
-            <label for="toggleHospitals">Hospitals</label><br>
-            <input type="checkbox" id="toggleCivil" checked>
-            <label for="toggleCivil">Civil Defense Centers</label><br>
-            <input type="checkbox" id="togglePharmacies" checked>
-            <label for="togglePharmacies">Pharmacies</label><br>
-            <input type="checkbox" id="togglePolice" checked>
-            <label for="togglePolice">Police Stations</label><br>
-            <input type="checkbox" id="toggleZones" checked>
-            <label for="toggleZones">Ramallah Zones</label><br>
-            <label for="destination">Destination:</label><br>
-            <input type="text" id="destination" placeholder="Enter coordinates (lat, lng)"><br>
-        </div>
-    </div>
-    
-    <!-- Sidebar toggle button -->
-    <div class="sidebar-toggle" onclick="toggleSidebar()">Toggle Sidebar</div>
-    
-    <!-- Coordinates display -->
-    <div id="coordinates" style="position: absolute; bottom: 10px; left: 10px;"></div>
-    
-    <!-- Locate user control -->
-    <div id="locateUser" class="leaflet-control-locate" title="Locate user"></div>
-
-    <!-- Button to show coordinates -->
-    <button id="showCoordinatesButton" style="position: absolute; bottom: 50px; left: 10px; padding: 5px 10px; cursor: pointer; z-index: 1000;">
-        Click to Show Coordinates
-    </button>
-    
-    <!-- Leaflet JavaScript -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <!-- Leaflet plugins JavaScript -->
-    <script src="https://unpkg.com/leaflet-search/dist/leaflet-search.min.js"></script>
-    <script src="https://rawgit.com/rowanwins/leaflet-easyPrint/gh-pages/dist/bundle.js"></script>
-    <script src="https://unpkg.com/leaflet-measure/dist/leaflet-measure.js"></script>
-    <script src="https://unpkg.com/leaflet-sidebar/src/L.Control.Sidebar.js"></script>
-    <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
-    <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-    <!-- Custom JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
     <script>
-        var map = L.map('map').setView([31.95, 35.2], 12);
+        // إعداد الخريطة
+        var map = L.map('map').setView([31.9038, 35.2034], 13);
 
+        // إضافة طبقة البلاط
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 20
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        function createGeoJsonLayer(url, propertyName, pointToLayerFunction, style) {
-            var layer = L.geoJson(null, {
-                pointToLayer: pointToLayerFunction,
-                style: style,
-                onEachFeature: function (feature, layer) {
-                    var popupContent = '<b>' + (feature.properties[propertyName] || "No name") + '</b>';
-                    if (feature.properties.phone_Number) {
-                        popupContent += '<br>Phone: ' + feature.properties.phone_Number;
-                    }
-                    layer.bindPopup(popupContent);
-                }
-            });
+        // رمز SVG لأيقونة المستشفيات
+        var hospitalIcon = L.divIcon({
+            html: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-hospital" viewBox="0 0 16 16">
+                    <path d="M8.5 5.034v1.1l.953-.55.5.867L9 7l.953.55-.5.866-.953-.55v1.1h-1v-1.1l-.953.55-.5-.866L7 7l-.953-.55.5-.866.953.55v-1.1zM13.25 9a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25zM13 11.25a.25.25 0 0 1 .25-.25h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5a.25.25 0 0 1-.25-.25zm.25 1.75a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25zm-11-4a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 3 9.75v-.5A.25.25 0 0 0 2.75 9zm0 2a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25zM2 13.25a.25.25 0 0 1 .25-.25h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5a.25.25 0 0 1-.25-.25z"/>
+                    <path d="M5 1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1a1 1 0 0 1 1 1v4h3a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h3V3a1 1 0 0 1 1-1zm2 14h2v-3H7zm3 0h1V3H5v12h1v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1zm0-14H6v1h4zm2 7v7h3V8zm-8 7V8H1v7z"/>
+                   </svg>`,
+            className: '',
+            iconSize: [16, 16]
+        });
 
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    layer.addData(data);
-                    if (url === 'RamallahZones.geojson') {
-                        map.fitBounds(layer.getBounds());
-                    }
-                })
-                .catch(error => console.error('Error loading GeoJSON:', error));
-
-            return layer;
-        }
-
-        function pointToLayerFunctionFactory(color) {
-            return function (feature, latlng) {
-                return L.circleMarker(latlng, {
-                    radius: 8,
-                    fillColor: color,
-                    color: color,
-                    weight: 1,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                });
-            };
-        }
-
-        var zonesLayer = createGeoJsonLayer('RamallahZones.geojson', 'NAME', null, {color: 'orange', fillOpacity: 0});
-        var hospitalLayer = createGeoJsonLayer('hospital.geojson', 'NAME_AR', pointToLayerFunctionFactory('orange'), null);
-        var civilLayer = createGeoJsonLayer('ciivilld.geojson', 'Name', pointToLayerFunctionFactory('yellow'), null);
-        var pharmacyLayer = createGeoJsonLayer('pharmacy.geojson', 'NAME_AR', pointToLayerFunctionFactory('pink'), null);
-        var policeLayer = createGeoJsonLayer('Police.geojson', 'NAME_AR_1', pointToLayerFunctionFactory('black'), null);
-
-        zonesLayer.addTo(map);
-        hospitalLayer.addTo(map);
-        civilLayer.addTo(map);
-        pharmacyLayer.addTo(map);
-        policeLayer.addTo(map);
-
-        var overlayMaps = {
-            "Hospitals": hospitalLayer,
-            "Civil Defense Centers": civilLayer,
-            "Pharmacies": pharmacyLayer,
-            "Police Stations": policeLayer,
-            "Ramallah Zones": zonesLayer
-        };
-
-        L.control.layers(null, overlayMaps).addTo(map);
-
-        var searchControl = new L.Control.Search({
-            layer: L.featureGroup([hospitalLayer, civilLayer, pharmacyLayer, policeLayer]),
-            propertyName: 'NAME_AR',
-            moveToLocation: function(latlng, title, map) {
-                map.setView(latlng, 15);
+        // إضافة ملفات GeoJSON
+        var hospitalLayer = L.geoJSON(null, {
+            pointToLayer: function (feature, latlng) {
+                return L.marker(latlng, { icon: hospitalIcon });
+            },
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup('<strong>' + feature.properties.NAME_AR + '</strong><br>Type: Hospital<br>Phone: ' + feature.properties.Phone_Num);
             }
-        });
-
-        searchControl.on('search:locationfound', function(e) {
-            e.layer.openPopup();
-        });
-
-        map.addControl(searchControl);
-
-        var legend = L.control({position: 'bottomright'});
-
-        legend.onAdd = function (map) {
-            var div = L.DomUtil.create('div', 'legend');
-            div.innerHTML += '<b>Legend</b><br>';
-            div.innerHTML += '<i style="background: orange;"></i> Hospitals<br>';
-            div.innerHTML += '<i style="background: yellow;"></i> Civil Defense Centers<br>';
-            div.innerHTML += '<i style="background: pink;"></i> Pharmacies<br>';
-            div.innerHTML += '<i style="background: black;"></i> Police Stations<br>';
-            div.innerHTML += '<i style="background: orange;"></i> Ramallah Zones<br>';
-            return div;
-        };
-
-        legend.addTo(map);
-
-        // Adding scale control
-        L.control.scale().addTo(map);
-
-        // Adding print tool
-        var printer = L.easyPrint({
-            title: 'Print map',
-            position: 'topleft',
-            elementsToHide: '.legend, .leaflet-control-search'
         }).addTo(map);
-
-        // Adding measure tool
-        var measureControl = new L.Control.Measure({
-            position: 'topleft',
-            primaryLengthUnit: 'meters',
-            primaryAreaUnit: 'sqmeters',
-            activeColor: '#FF8300',
-            completedColor: '#FF8300'
-        });
-        measureControl.addTo(map);
-
-        // Adding draw control
-        var drawnItems = new L.FeatureGroup();
-        map.addLayer(drawnItems);
-
-        var drawControl = new L.Control.Draw({
-            position: 'topleft',
-            draw: {
-                polyline: true,
-                polygon: true,
-                circle: false,
-                rectangle: true,
-                marker: true
-            },
-            edit: {
-                featureGroup: drawnItems,
-                remove: true
+        var ramallahZonesLayer = L.geoJSON(null, {
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup('<strong>' + feature.properties.NAME + '</strong><br>Mail Code: ' + feature.properties.MAIL_CODE);
             }
-        });
-
-        map.addControl(drawControl);
-
-        map.on(L.Draw.Event.CREATED, function (event) {
-            var layer = event.layer;
-            drawnItems.addLayer(layer);
-        });
-
-        // Toggle sidebar function
-        function toggleSidebar() {
-            var sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('active');
-        }
-
-        // Display coordinates on click
-        var coordinatesDiv = document.getElementById('coordinates');
-
-        map.on('click', function(e) {
-            coordinatesDiv.innerHTML = '<b>Clicked Coordinates:</b><br>Latitude: ' + e.latlng.lat.toFixed(6) + '<br>Longitude: ' + e.latlng.lng.toFixed(6);
-        });
-
-        // Adding locate user control
-        var locateUserControl = L.control.locate({
-            position: 'topleft',
-            drawCircle: true,
-            follow: true,
-            setView: 'untilPan',
-            keepCurrentZoomLevel: true,
-            markerStyle: {
-                weight: 1,
-                opacity: 0.8,
-                fillOpacity: 0.8
-            },
-            circleStyle: {
-                weight: 1,
-                clickable: false
-            },
-            icon: 'fa fa-location-arrow',
-            metric: true,
-            strings: {
-                title: "Show me where I am",
-                popup: "You are within {distance} {unit} from this point",
-                outsideMapBoundsMsg: "You seem located outside the boundaries of the map"
-            },
-            locateOptions: {
-                maxZoom: 18,
-                watch: true,
-                enableHighAccuracy: true,
-                maximumAge: 10000,
-                timeout: 10000
+        }).addTo(map);
+        var civilDefenseLayer = L.geoJSON(null, {
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup('<strong>' + feature.properties.Name + '</strong><br>Phone: ' + feature.properties.number_pho);
+            }
+        }).addTo(map);
+        var policeLayer = L.geoJSON(null, {
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup('<strong>' + feature.properties.NAME_AR_1 + '</strong><br>Phone: ' + feature.properties.number_pho);
             }
         }).addTo(map);
 
-        // Trigger locate user function on load
-        map.on('load', function() {
-            locateUserControl.start();
-        });
+        // تحميل ملفات GeoJSON
+        fetch('hospital.geojson').then(res => res.json()).then(data => hospitalLayer.addData(data));
+        fetch('RamallahZones.geojson').then(res => res.json()).then(data => ramallahZonesLayer.addData(data));
+        fetch('ciivilld.geojson').then(res => res.json()).then(data => civilDefenseLayer.addData(data));
+        fetch('Police.geojson').then(res => res.json()).then(data => policeLayer.addData(data));
 
-        map.whenReady(function() {
-            locateUserControl.start();
-        });
+        // إعداد البحث
+        var geocoder = L.Control.geocoder({
+            defaultMarkGeocode: false
+        })
+        .on('markgeocode', function(e) {
+            var bbox = e.geocode.bbox;
+            var poly = L.polygon([
+                bbox.getSouthEast(),
+                bbox.getNorthEast(),
+                bbox.getNorthWest(),
+                bbox.getSouthWest()
+            ]).addTo(map);
+            map.fitBounds(poly.getBounds());
+        })
+        .addTo(map);
 
-        // Adding routing control
-        var routingControl = L.Routing.control({
-            waypoints: [],
-            routeWhileDragging: true,
-            geocoder: L.Control.Geocoder.nominatim()
-        }).addTo(map);
+        // إعداد الموقع الجغرافي
+        map.locate({setView: true, maxZoom: 16});
 
-        // Adding a button to start routing
-        var routingButton = L.easyButton('fa-location-arrow', function(btn, map){
-            // Use the geolocation API to get the current position
-            map.locate({setView: true, maxZoom: 16});
-            map.on('locationfound', function(e){
-                var currentLocation = e.latlng;
+        function onLocationFound(e) {
+            var radius = e.accuracy / 2;
+            L.marker(e.latlng).addTo(map)
+                .bindPopup("You are within " + radius + " meters from this point").openPopup();
+            L.circle(e.latlng, radius).addTo(map);
+        }
 
-                // Open a popup to select the destination
-                L.popup()
-                    .setLatLng(currentLocation)
-                    .setContent('<b>Select your destination</b><br><button onclick="setRoutingDestination()">Set Destination</button>')
-                    .openOn(map);
+        map.on('locationfound', onLocationFound);
 
-                window.setRoutingDestination = function() {
-                    var destination = L.DomUtil.get('destination').value;
-                    L.Routing.control({
-                        waypoints: [
-                            currentLocation,
-                            L.latLng(destination)
-                        ],
-                        routeWhileDragging: true
-                    }).addTo(map);
-                    map.closePopup();
-                }
-            });
-        }, 'Get Directions').addTo(map);
+        function onLocationError(e) {
+            alert(e.message);
+        }
 
-        // Function to toggle showing coordinates on button click
-        var showCoordinatesButton = document.getElementById('showCoordinatesButton');
-        showCoordinatesButton.addEventListener('click', function() {
-            var coordinatesDiv = document.getElementById('coordinates');
-            coordinatesDiv.style.display = 'block'; // Show coordinates div
-        });
+        map.on('locationerror', onLocationError);
+
+        // إعداد الكلستر والتحليل الحراري
+        var markers = L.markerClusterGroup();
+        markers.addLayer(hospitalLayer);
+        markers.addLayer(civilDefenseLayer);
+        markers.addLayer(policeLayer);
+        map.addLayer(markers);
+
+        var heat = L.heatLayer([
+            // إضافة النقاط الحرارية هنا (مثال)
+            [31.9038, 35.2034, 0.5]
+        ], {radius: 25}).addTo(map);
     </script>
 </body>
-</html>
-

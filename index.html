@@ -88,8 +88,24 @@
                 suitableLocations.push([lat, lng]);
             }
 
-            suitableLocations.forEach(function(location) {
-                var suitableLocationMarker = L.marker(location, {
+            return suitableLocations;
+        }
+
+        // تلوين المناطق التي تحتاج إلى تعزيز وتحديد مواقع جديدة
+        ramallahZonesLayer.on('data:loaded', function() {
+            var allSuitableLocations = [];
+
+            ramallahZonesLayer.eachLayer(function(layer) {
+                if (zoneNeedsReinforcement(layer)) {
+                    layer.setStyle({color: 'red'});
+                    allSuitableLocations = allSuitableLocations.concat(findSuitableLocations(layer));
+                } else {
+                    layer.setStyle({color: 'green'});
+                }
+            });
+
+            var suitableLocationsLayer = L.layerGroup(allSuitableLocations.map(function(location) {
+                return L.marker(location, {
                     icon: L.icon({
                         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
                         iconSize: [25, 41],
@@ -98,21 +114,10 @@
                         shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
                         shadowSize: [41, 41]
                     })
-                }).addTo(map);
-                suitableLocationMarker.bindPopup("موقع مقترح لمركز طوارئ جديد").openPopup();
-            });
-        }
+                }).bindPopup("موقع مقترح لمركز طوارئ جديد");
+            }));
 
-        // تلوين المناطق التي تحتاج إلى تعزيز وتحديد مواقع جديدة
-        ramallahZonesLayer.on('data:loaded', function() {
-            ramallahZonesLayer.eachLayer(function(layer) {
-                if (zoneNeedsReinforcement(layer)) {
-                    layer.setStyle({color: 'red'});
-                    findSuitableLocations(layer);
-                } else {
-                    layer.setStyle({color: 'green'});
-                }
-            });
+            suitableLocationsLayer.addTo(map);
         });
 
         var legend = L.control.legend({
@@ -126,3 +131,4 @@
     </script>
 </body>
 </html>
+

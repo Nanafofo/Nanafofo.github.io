@@ -15,6 +15,7 @@
     <script src="https://unpkg.com/leaflet-ajax@2.1.0/dist/leaflet.ajax.min.js"></script>
     <script src="https://unpkg.com/leaflet-legend/L.Control.Legend.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-legend/L.Control.Legend.css" />
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <script>
         var map = L.map('map').setView([31.9024, 35.1957], 13); // مركز رام الله
 
@@ -60,7 +61,7 @@
         policeLayer.addTo(map);
         ramallahZonesLayer.addTo(map);
 
-        // وظيفة للتحقق من إذا كانت المنطقة تحتوي على مراكز طوارئ
+        // وظيفة للتحقق من إذا كانت المنطقة تحتوي على مراكز طوارئ أقل من المطلوب
         function zoneNeedsReinforcement(zone) {
             var emergencyCenterCount = 0;
             var emergencyCenters = [hospitalLayer, pharmacyLayer, civilLayer, policeLayer];
@@ -76,20 +77,30 @@
             return emergencyCenterCount <= 2;
         }
 
-        // وظيفة لاختيار موقع جديد لمركز الطوارئ
-        function findSuitableLocation(zone) {
-            var center = zone.getBounds().getCenter();
-            var suitableLocationMarker = L.marker(center, {
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-                    shadowSize: [41, 41]
-                })
-            }).addTo(map);
-            suitableLocationMarker.bindPopup("موقع مقترح لمركز طوارئ جديد").openPopup();
+        // وظيفة لاختيار عدة مواقع جديدة لمراكز الطوارئ داخل المنطقة
+        function findSuitableLocations(zone, numberOfLocations = 3) {
+            var bounds = zone.getBounds();
+            var suitableLocations = [];
+
+            for (var i = 0; i < numberOfLocations; i++) {
+                var lat = bounds.getSouth() + (bounds.getNorth() - bounds.getSouth()) * Math.random();
+                var lng = bounds.getWest() + (bounds.getEast() - bounds.getWest()) * Math.random();
+                suitableLocations.push([lat, lng]);
+            }
+
+            suitableLocations.forEach(function(location) {
+                var suitableLocationMarker = L.marker(location, {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map);
+                suitableLocationMarker.bindPopup("موقع مقترح لمركز طوارئ جديد").openPopup();
+            });
         }
 
         // تلوين المناطق التي تحتاج إلى تعزيز وتحديد مواقع جديدة
@@ -97,7 +108,7 @@
             ramallahZonesLayer.eachLayer(function(layer) {
                 if (zoneNeedsReinforcement(layer)) {
                     layer.setStyle({color: 'red'});
-                    findSuitableLocation(layer);
+                    findSuitableLocations(layer);
                 } else {
                     layer.setStyle({color: 'green'});
                 }
